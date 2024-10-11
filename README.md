@@ -1,7 +1,7 @@
 # autogen-assistant
 The starting place to a Jarvis type assistant 
 
-See https://microsoft.github.io/autogen/docs/Installation/ for more information
+See [https://microsoft.github.io/autogen/docs/Installation/](https://github.com/autogen-ai/autogen) for more information
 
 Prerequisite to get started:
 
