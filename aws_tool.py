@@ -12,38 +12,43 @@ def list_objects_in_account():
     return command.stdout
 
 
-executor = LocalCommandLineCodeExecutor(
-    timeout=10,  # Timeout for each code execution in seconds.
-    functions = [list_objects_in_account],
-)
-
-
 llm_config = {
     "temperature": 0,
     "config_list": config_list,
 }
 
-engineer = AssistantAgent(
+engineer = ConversableAgent(
     name="Engineer",
-    llm_config=llm_config,
+    llm_config=False,
     code_execution_config ={"executor":executor},
+    is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
+    human_input_mode="NEVER",
 )
 
-user_proxy = ConversableAgent(
-    name="Admin",
-    human_input_mode="ALWAYS",
+assistant = ConversableAgent(
+    name="Assistant",
     code_execution_config=False,
-    is_termination_msg=lambda x: x.get("content", "") is not None and "terminate" in x["content"].lower(),
-    default_auto_reply="Please continue if not finished, otherwise return 'TERMINATE'.",
+    llm_config=llm_config ,
+    system_message="You are a helpful AI assistant. "
+    "You can help with simple calculations. "
+    "Return 'TERMINATE' when the task is done.",
 )
 
 #### prepare appropiate functions
 
 #Register the function with the agents
 
-engineer.register_for_llm(name="list_objects_in_account",description="List buckets")(list_objects_in_account)
+assistant.register_for_llm(name="list_objects_in_account",description="List buckets")(list_objects_in_account)
 
-user_proxy.register_for_execution(name="list_objects_in_account")(list_objects_in_account)
+#user_proxy.register_for_execution(name="list_objects_in_account")(list_objects_in_account)
 engineer.register_for_execution(name="list_objects_in_account")(list_objects_in_account)
 
-chat_result = user_proxy.initiate_chat(engineer, message="List AWS S3 buckets")
+register_function(
+    list_s3_buckets,
+    caller=assistant,  # The assistant agent can suggest calls to the calculator.
+    executor=engineer,  # The user proxy agent can execute the calculator calls.
+    name="calculator",  # By default, the function name is used as the tool name.
+    description="A s3 bucket lister",  # A description of the tool.
+)
+
+chat_result = engineer.initiate_chat(assistant, message="List AWS S3 buckets")
