@@ -7,9 +7,14 @@ from typing_extensions import Annotated
 
 config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
 
+def list_objects_in_account():
+    command = subprocess.run(["ls"], shell=True,capture_output=True)
+    return command.stdout
+
+
 executor = LocalCommandLineCodeExecutor(
     timeout=10,  # Timeout for each code execution in seconds.
-    functions = list_objects_in_account,
+    functions = [list_objects_in_account],
 )
 
 
@@ -22,9 +27,6 @@ engineer = AssistantAgent(
     name="Engineer",
     llm_config=llm_config,
     code_execution_config ={"executor":executor},
-    system_message="""
-    I'm Engineer. I'm expert in bash programming. I'm executing code tasks required by Admin.
-    """,
 )
 
 user_proxy = ConversableAgent(
@@ -37,13 +39,11 @@ user_proxy = ConversableAgent(
 
 #### prepare appropiate functions
 
-def list_objects_in_account(directory: Annotated[str, "AWS Account to check"]):
-    subprocess.run(["aws s3 ls"], shell=True)
-
 #Register the function with the agents
 
 engineer.register_for_llm(name="list_objects_in_account",description="List buckets")(list_objects_in_account)
 
 user_proxy.register_for_execution(name="list_objects_in_account")(list_objects_in_account)
+engineer.register_for_execution(name="list_objects_in_account")(list_objects_in_account)
 
 chat_result = user_proxy.initiate_chat(engineer, message="List AWS S3 buckets")
