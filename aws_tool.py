@@ -8,8 +8,8 @@ from typing_extensions import Annotated
 config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
 
 def list_objects_in_account():
-    command = subprocess.run(["ls", "-lah"], shell=True, capture_output=True, text=True)
-    return command.stdout
+    result = subprocess.run(["ls", "-lah"], capture_output=True, text=True)
+    return result.stdout
 
 llm_config = {
     "temperature": 0,
