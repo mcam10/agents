@@ -8,7 +8,8 @@ from typing_extensions import Annotated
 config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
 
 def list_objects_in_account():
-    result = subprocess.run(["ls", "-lah"], capture_output=True, text=True)
+
+    result = subprocess.run(["aws", "s3", "ls"], capture_output=True, text=True)
     return result.stdout
 
 llm_config = {
@@ -33,10 +34,10 @@ assistant = ConversableAgent(
 
 register_function(
     list_objects_in_account,
-    caller=assistant,  # The assistant agent can suggest calls to the calculator.
-    executor=engineer,  # The engineer agent can execute the calculator calls.
+    caller=assistant,  # The assistant agent can suggest calls to the S3 account lister.
+    executor=engineer,  # The engineer agent can execute the s3 calls.
     name="list_objects_in_account",  # By default, the function name is used as the tool name.
-    description="Lister",  # A description of the tool.
+    description="List S3 objects in AWS Account",  # A description of the tool.
 )
 
 chat_result = engineer.initiate_chat(assistant, message="List Directories")
