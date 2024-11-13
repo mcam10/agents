@@ -34,6 +34,11 @@ llm_config = {
     "config_list": config_list,
 }
 
+function_map={
+        "list_objects_in_account": list_objects_in_account,
+        "get_credential_info": get_credential_info,
+}
+
 engineer = ConversableAgent(
     name="Engineer",
     llm_config=False,
@@ -47,16 +52,21 @@ assistant = ConversableAgent(
     llm_config=llm_config ,
     system_message="You are a helpful AI assistant"
     "Return 'TERMINATE' when the task is done.",
-    function_map={
-        "list_objects_in_account": list_objects_in_account,
-        "get_credential_info": get_credential_info,
-    },
 )
 
 register_function(
+    list_objects_in_account,
     caller=assistant,  # The assistant agent can suggest calls to the S3 account lister.
     executor=engineer,  # The engineer agent can execute the s3 calls.
     description="AWS Actions Agent",  # A description of the tool.
 )
 
-chat_result = engineer.initiate_chat(assistant, message="List Directories")
+register_function(
+    get_credential_info,
+    caller=assistant,  # The assistant agent can suggest calls to the S3 account lister.
+    executor=engineer,  # The engineer agent can execute the s3 calls.
+    description="AWS credential info",  # A description of the tool.
+)
+
+chat_result = engineer.initiate_chat(assistant, message="Get credential info")
+#chat_result = engineer.initiate_chat(assistant, message="List S3 buckets in Account")
