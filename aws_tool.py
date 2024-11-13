@@ -5,11 +5,28 @@ from autogen.coding import LocalCommandLineCodeExecutor
 
 from typing_extensions import Annotated
 
+from pathlib import Path
+
 config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
 
-def list_objects_in_account():
+file_path = Path("~/.aws")
 
+if file_path.exists():
+    print("AWS folder existd!")
+else:
+    print("AWS folder does not exist.")
+
+
+def get_credential_info():
+    result = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True)
+    return result.stdout
+
+def list_objects_in_account():
     result = subprocess.run(["aws", "s3", "ls"], capture_output=True, text=True)
+    return result.stdout
+
+def versioning_enabled(BUCKET:str) -> any:
+    result = subprocess.run(["aws", "s3api", "get-bucket-versioning","--bucket",BUCKET], capture_output=True, text=True)
     return result.stdout
 
 llm_config = {
@@ -30,14 +47,16 @@ assistant = ConversableAgent(
     llm_config=llm_config ,
     system_message="You are a helpful AI assistant"
     "Return 'TERMINATE' when the task is done.",
+    function_map={
+        "list_objects_in_account": list_objects_in_account,
+        "get_credential_info": get_credential_info,
+    },
 )
 
 register_function(
-    list_objects_in_account,
     caller=assistant,  # The assistant agent can suggest calls to the S3 account lister.
     executor=engineer,  # The engineer agent can execute the s3 calls.
-    name="list_objects_in_account",  # By default, the function name is used as the tool name.
-    description="List S3 objects in AWS Account",  # A description of the tool.
+    description="AWS Actions Agent",  # A description of the tool.
 )
 
 chat_result = engineer.initiate_chat(assistant, message="List Directories")
