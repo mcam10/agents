@@ -31,12 +31,27 @@ def get_configuration() -> any:
     return result.stdout
 
 def list_objects_in_account():
-    result = subprocess.run(["aws", "s3", "ls"], capture_output=True, text=True)
+    result = subprocess.run(["aws", "s3api", "list-buckets", "|", "jq", "-r", ".'Buckets[].Name'"], capture_output=True, text=True)
     return result.stdout
 
 def versioning_enabled(BUCKET:str) -> any:
-    result = subprocess.run(["aws", "s3api", "get-bucket-versioning","--bucket",BUCKET], capture_output=True, text=True)
+    result = subprocess.run(["aws", "s3api", "get-bucket-versioning","--bucket", BUCKET], capture_output=True, text=True)
     return result.stdout
+
+## need a apply to all option which will need the seondary tool list objects in account function so some sort of recursive function enablement will be needed
+
+def versioning_enabled(BUCKET:str) -> any:
+    result = subprocess.run(["aws", "s3api", "get-bucket-versioning","--bucket", BUCKET], capture_output=True, text=True)
+    return result.stdout
+
+def get_aws_cloudtrail_events() -> any:
+    result = subprocess.run(["aws","cloudtrail", "lookup-events" "--max-items", "10"], capture_output=True, text=True)
+    return result.stdout
+
+def get_running_ec2_instances() -> any:
+    result = subprocess.run(["aws","ec2", "describe-instances" "--filters", "Name=tag-key, Values=Name", "--query", "'Reservations[*].Instances[*].{Instance:InstanceId,AZ:Placement.AvailabilityZone,Name:Tags[?Key==`Name`]|[0].Value}'", "--output", "table" ], capture_output=True, text=True)
+    return result.stdout
+
 
 llm_config = {
     "temperature": 0,
