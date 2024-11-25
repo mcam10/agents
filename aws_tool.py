@@ -9,10 +9,10 @@ from pathlib import Path
 
 config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
 
-file_path = Path("~/.aws/")
+file_path = Path("/Users/mcameron/.aws/")
 
-# Set the KUBECONFIG environment variable
-# if the kubeconfig file is not in the default location(~/.kube/config).
+# Set the AWS_PROFILE environment variable
+# if the AWS config file is not in the default location(~/.aws/config).
 os.environ["AWS_PROFILE"] = "sandbox-pmc"
 os.environ["BUCKET"] = "vip-bucket-sandbox-test"
 
@@ -21,8 +21,8 @@ llm_config = {
     "config_list": config_list,
 }
 
-if file_path.exists():
-    print("AWS folder existd!")
+if os.path.exists(file_path):
+    print("AWS folder exists!")
 else:
     print("AWS folder does not exist.")
 
@@ -41,6 +41,12 @@ assistant = ConversableAgent(
     "Return 'TERMINATE' when the task is done.",
 )
 
+config_agent = autogen.AssistantAgent(
+    name="Config Agent",
+    llm_config=llm_config,
+    system_message="""Config Agent. You hold all the configuration data. You hold information regarding the current credentials and their access. You don't write code.""",
+)
+
 @engineer.register_for_execution()
 @assistant.register_for_llm(description="Getting credential Information for current AWS User")
 def get_credential_info () -> any:
@@ -54,9 +60,9 @@ def get_configuration() -> any:
     return result.stdout
 
 @engineer.register_for_execution()
-@assistant.register_for_llm(description="List all s3 buckets")
-def list_objects_in_account():
-    result = subprocess.run(["aws", "s3api", "list-buckets", "|", "jq", "-r", ".'Buckets[].Name'"], capture_output=True, text=True)
+@assistant.register_for_llm(description="Listing all s3 buckets")
+def list_buckets_in_account() -> any:
+    result = subprocess.run(["aws", "s3", "ls", "--output=json"], capture_output=True, text=True)
     return result.stdout
 
 @engineer.register_for_execution()
@@ -79,11 +85,4 @@ def get_running_ec2_instances() -> any:
     result = subprocess.run(["aws","ec2", "describe-instances" "--filters", "Name=tag-key, Values=Name", "--query", "'Reservations[*].Instances[*].{Instance:InstanceId,AZ:Placement.AvailabilityZone,Name:Tags[?Key==`Name`]|[0].Value}'", "--output", "table" ], capture_output=True, text=True)
     return result.stdout
 
-
-function_map={
-        "list_objects_in_account": list_objects_in_account,
-        "get_credential_info": get_credential_info,
-        "get_configuration":  get_configuration,
-}
-
-chat_result = engineer.initiate_chat(assistant, message="What is my AWS credential info?")
+chat_result = engineer.initiate_chat(assistant, message="List all the s3 buckets")
