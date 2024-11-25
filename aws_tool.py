@@ -21,33 +21,55 @@ if file_path.exists():
 else:
     print("AWS folder does not exist.")
 
+engineer = ConversableAgent(
+    name="Engineer",
+    llm_config=False,
+    is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
+    human_input_mode="NEVER",
+)
 
+assistant = ConversableAgent(
+    name="Assistant",
+    code_execution_config=False,
+    llm_config=llm_config ,
+    system_message="You are a helpful AI assistant"
+    "Return 'TERMINATE' when the task is done.",
+)
+
+@engineer.register_for_execution()
+@assistant.register_for_llm(description="Getting credential Information for current AWS User")
 def get_credential_info () -> any:
     result = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True)
     return result.stdout
 
+@engineer.register_for_execution()
+@assistant.register_for_llm(description="Get AWS Account configuration")
 def get_configuration() -> any:
-    result = subprocess.run(["aws", "configure", "get", "sandbox-pmc.aws_access_key_id",BUCKET], capture_output=True, text=True)
+    result = subprocess.run(["aws", "configure", "get", "sandbox-pmc.aws_access_key_id"], capture_output=True, text=True)
     return result.stdout
 
+@engineer.register_for_execution()
+@assistant.register_for_llm(description="List all s3 buckets")
 def list_objects_in_account():
     result = subprocess.run(["aws", "s3api", "list-buckets", "|", "jq", "-r", ".'Buckets[].Name'"], capture_output=True, text=True)
     return result.stdout
 
-def versioning_enabled(BUCKET:str) -> any:
-    result = subprocess.run(["aws", "s3api", "get-bucket-versioning","--bucket", BUCKET], capture_output=True, text=True)
+@engineer.register_for_execution()
+@assistant.register_for_llm(description="Check if versioning is enabled for specified Bucket"
+def versioning_enabled(
+    bucket: Annotated[str, "Bucket Name"],
+)    -> any:
+    result = subprocess.run(["aws", "s3api", "get-bucket-versioning","--bucket", bucket], capture_output=True, text=True)
     return result.stdout
 
-## need a apply to all option which will need the seondary tool list objects in account function so some sort of recursive function enablement will be needed
-
-def versioning_enabled(BUCKET:str) -> any:
-    result = subprocess.run(["aws", "s3api", "get-bucket-versioning","--bucket", BUCKET], capture_output=True, text=True)
-    return result.stdout
-
-def get_aws_cloudtrail_events() -> any:
+@engineer.register_for_execution()
+@assistant.register_for_llm()
+def get_aws_cloudtrail_events(description="Get the last 10 cloudtrail events") -> any:
     result = subprocess.run(["aws","cloudtrail", "lookup-events" "--max-items", "10"], capture_output=True, text=True)
     return result.stdout
 
+@engineer.register_for_execution()
+@assistant.register_for_llm(description="Get running EC2 instances")
 def get_running_ec2_instances() -> any:
     result = subprocess.run(["aws","ec2", "describe-instances" "--filters", "Name=tag-key, Values=Name", "--query", "'Reservations[*].Instances[*].{Instance:InstanceId,AZ:Placement.AvailabilityZone,Name:Tags[?Key==`Name`]|[0].Value}'", "--output", "table" ], capture_output=True, text=True)
     return result.stdout
@@ -64,49 +86,4 @@ function_map={
         "get_configuration":  get_configuration,
 }
 
-engineer = ConversableAgent(
-    name="Engineer",
-    llm_config=False,
-    is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
-    human_input_mode="NEVER",
-)
-
-assistant = ConversableAgent(
-    name="Assistant",
-    code_execution_config=False,
-    llm_config=llm_config ,
-    system_message="You are a helpful AI assistant"
-    "Return 'TERMINATE' when the task is done.",
-)
-
-register_function(
-    list_objects_in_account,
-    caller=assistant,  # The assistant agent can suggest calls to the S3 account lister.
-    executor=engineer,  # The engineer agent can execute the s3 calls.
-    description="AWS Actions Agent",  # A description of the tool.
-)
-
-register_function(
-    get_credential_info,
-    caller=assistant,  # The assistant agent can suggest calls to the S3 account lister.
-    executor=engineer,  # The engineer agent can execute the s3 calls.
-    description="AWS credential info",  # A description of the tool.
-)
-
-register_function(
-    get_configuration,
-    caller=assistant,  # The assistant agent can suggest calls to the S3 account lister.
-    executor=engineer,  # The engineer agent can execute the s3 calls.
-    description="Get AWS Configuration",  # A description of the tool.
-)
-
 chat_result = engineer.initiate_chat(assistant, message="Find the environment variable of AWS_PROFILE")
-#chat_result = engineer.initiate_chat(assistant, message="List S3 buckets in Account")
-
-#should also put guardrails in place for certain types of commands and printing output
-
-## delete calls need review
-## current account creds are guarded
-## this should be configured via IAC as well. 
-
-## also think about stacked calls to your agentic system... queue system to process calls at some point
