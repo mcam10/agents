@@ -16,6 +16,11 @@ file_path = Path("~/.aws/")
 os.environ["AWS_PROFILE"] = "sandbox-pmc"
 os.environ["BUCKET"] = "vip-bucket-sandbox-test"
 
+llm_config = {
+    "temperature": 0,
+    "config_list": config_list,
+}
+
 if file_path.exists():
     print("AWS folder existd!")
 else:
@@ -31,7 +36,7 @@ engineer = ConversableAgent(
 assistant = ConversableAgent(
     name="Assistant",
     code_execution_config=False,
-    llm_config=llm_config ,
+    llm_config=llm_config,
     system_message="You are a helpful AI assistant"
     "Return 'TERMINATE' when the task is done.",
 )
@@ -55,7 +60,7 @@ def list_objects_in_account():
     return result.stdout
 
 @engineer.register_for_execution()
-@assistant.register_for_llm(description="Check if versioning is enabled for specified Bucket"
+@assistant.register_for_llm(description="Check if versioning is enabled for specified Bucket")
 def versioning_enabled(
     bucket: Annotated[str, "Bucket Name"],
 )    -> any:
@@ -63,7 +68,7 @@ def versioning_enabled(
     return result.stdout
 
 @engineer.register_for_execution()
-@assistant.register_for_llm()
+@assistant.register_for_llm(description="List Cloudtrail events")
 def get_aws_cloudtrail_events(description="Get the last 10 cloudtrail events") -> any:
     result = subprocess.run(["aws","cloudtrail", "lookup-events" "--max-items", "10"], capture_output=True, text=True)
     return result.stdout
@@ -75,15 +80,10 @@ def get_running_ec2_instances() -> any:
     return result.stdout
 
 
-llm_config = {
-    "temperature": 0,
-    "config_list": config_list,
-}
-
 function_map={
         "list_objects_in_account": list_objects_in_account,
         "get_credential_info": get_credential_info,
         "get_configuration":  get_configuration,
 }
 
-chat_result = engineer.initiate_chat(assistant, message="Find the environment variable of AWS_PROFILE")
+chat_result = engineer.initiate_chat(assistant, message="What is my AWS credential info?")
