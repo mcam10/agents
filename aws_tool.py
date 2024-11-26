@@ -11,6 +11,10 @@ config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
 
 file_path = Path("/Users/mcameron/.aws/")
 
+
+##Also lets train our tool calls to use DRY prinicples...instead use as a global arg to pass to structured output.. think in JSON aka aws cli uses --output=json
+##TODO: Gotta figure out how to think of security that is built into Agents system..
+
 # Set the AWS_PROFILE environment variable
 # if the AWS config file is not in the default location(~/.aws/config).
 AWS_PROFILE = os.environ["AWS_PROFILE"] 
