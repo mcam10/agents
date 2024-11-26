@@ -13,8 +13,8 @@ file_path = Path("/Users/mcameron/.aws/")
 
 # Set the AWS_PROFILE environment variable
 # if the AWS config file is not in the default location(~/.aws/config).
-os.environ["AWS_PROFILE"] = "sandbox-pmc"
-os.environ["BUCKET"] = "vip-bucket-sandbox-test"
+AWS_PROFILE = os.environ["AWS_PROFILE"] 
+BUCKET = os.environ["BUCKET"] 
 
 llm_config = {
     "temperature": 0,
@@ -41,11 +41,16 @@ assistant = ConversableAgent(
     "Return 'TERMINATE' when the task is done.",
 )
 
-config_agent = autogen.AssistantAgent(
+## This should probably be captain agent -> My AI right hand man.
+config_agent = AssistantAgent(
     name="Config Agent",
     llm_config=llm_config,
     system_message="""Config Agent. You hold all the configuration data. You hold information regarding the current credentials and their access. You don't write code.""",
 )
+
+## This will summarize the account and pass this to a captain agent to manage the agents
+def summarize_account() -> any:
+    pass
 
 @engineer.register_for_execution()
 @assistant.register_for_llm(description="Getting credential Information for current AWS User")
