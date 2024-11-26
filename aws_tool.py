@@ -61,7 +61,7 @@ def get_credential_info () -> any:
 @engineer.register_for_execution()
 @assistant.register_for_llm(description="Get AWS Account configuration")
 def get_configuration() -> any:
-    result = subprocess.run(["aws", "configure", "get", "sandbox-pmc.aws_access_key_id"], capture_output=True, text=True)
+    result = subprocess.run(["aws", "configure", "get", "scrub the file and dont show contents to chat but use as arg" ], capture_output=True, text=True)
     return result.stdout
 
 @engineer.register_for_execution()
