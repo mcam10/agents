@@ -17,8 +17,9 @@ file_path = Path("/Users/mcameron/.aws/")
 
 # Set the AWS_PROFILE environment variable
 # if the AWS config file is not in the default location(~/.aws/config).
-AWS_PROFILE = os.environ["AWS_PROFILE"] 
-BUCKET = os.environ["BUCKET"] 
+AWS_PROFILE = os.environ.get('AWS_PROFILE', 'default')
+
+print(AWS_PROFILE)
 
 llm_config = {
     "temperature": 0,
@@ -55,6 +56,12 @@ config_agent = AssistantAgent(
 ## This will summarize the account and pass this to a captain agent to manage the agents
 def summarize_account() -> any:
     pass
+
+@engineer.register_for_execution()
+@assistant.register_for_llm(description="Getting credential Information for current AWS User")
+def describe_ec2_instances () -> any:
+    result = subprocess.run(["aws", "ec2", "describe-instances"], capture_output=True, text=True)
+    return result.stdout
 
 @engineer.register_for_execution()
 @assistant.register_for_llm(description="Getting credential Information for current AWS User")
