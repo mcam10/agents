@@ -101,7 +101,20 @@ def get_running_ec2_instances() -> any:
     result = subprocess.run(["aws","ec2", "describe-instances" "--filters", "Name=tag-key, Values=Name", "--query", "'Reservations[*].Instances[*].{Instance:InstanceId,AZ:Placement.AvailabilityZone,Name:Tags[?Key==`Name`]|[0].Value}'", "--output", "table" ], capture_output=True, text=True)
     return result.stdout
 
-chat_result = engineer.initiate_chat(assistant, 
-              message="List all the s3 buckets",
-              summary_method= "reflection_with_llm",
+
+## lets initiate another chat to get a ending review or summary of the accounts after the agents take action
+chat_result = engineer.initiate_chats(
+    [
+
+     {
+             "recipient": assistant, 
+             "message": "List all the s3 buckets",
+             "summary_method": "reflection_with_llm",
+    },
+    {
+             "recipient": assistant, 
+             "message":  "Summarize this AWS Account",
+             "summary_method": "last_msg",
+    },
+  ]
 )
