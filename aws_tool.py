@@ -11,15 +11,9 @@ config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
 
 file_path = Path("/Users/mcameron/.aws/")
 
-
-##Also lets train our tool calls to use DRY prinicples...instead use as a global arg to pass to structured output.. think in JSON aka aws cli uses --output=json
-##TODO: Gotta figure out how to think of security that is built into Agents system..
-
-# Set the AWS_PROFILE environment variable
-# if the AWS config file is not in the default location(~/.aws/config).
 AWS_PROFILE = os.environ.get('AWS_PROFILE', 'default')
 
-print(AWS_PROFILE)
+aws_admin_tasks = ["""Develop a summary using the tools and information provided."""]
 
 llm_config = {
     "temperature": 0,
@@ -42,8 +36,11 @@ assistant = ConversableAgent(
     name="Assistant",
     code_execution_config=False,
     llm_config=llm_config,
-    system_message="You are a helpful AI assistant"
-    "Return 'TERMINATE' when the task is done.",
+    system_message="""
+        You are a Assistant Agent using the information and tools
+        provided to summarize what is happening in the enviornment you run in
+        Return 'TERMINATE' when the task is done.
+        """,
 )
 
 ## This should probably be captain agent -> My AI right hand man.
@@ -54,25 +51,15 @@ config_agent = AssistantAgent(
 )
 
 ## This will summarize the account and pass this to a captain agent to manage the agents
+@assistant.register_for_llm(description="Getting credential Information for current AWS User")
 def summarize_account() -> any:
+    result = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True)
     pass
 
 @engineer.register_for_execution()
-@assistant.register_for_llm(description="Getting credential Information for current AWS User")
+@assistant.register_for_llm(description="Getting EC2 instance information for current AWS User")
 def describe_ec2_instances () -> any:
     result = subprocess.run(["aws", "ec2", "describe-instances"], capture_output=True, text=True)
-    return result.stdout
-
-@engineer.register_for_execution()
-@assistant.register_for_llm(description="Getting credential Information for current AWS User")
-def get_credential_info () -> any:
-    result = subprocess.run(["aws", "sts", "get-caller-identity"], capture_output=True, text=True)
-    return result.stdout
-
-@engineer.register_for_execution()
-@assistant.register_for_llm(description="Get AWS Account configuration")
-def get_configuration() -> any:
-    result = subprocess.run(["aws", "configure", "get", "scrub the file and dont show contents to chat but use as arg" ], capture_output=True, text=True)
     return result.stdout
 
 @engineer.register_for_execution()
@@ -103,6 +90,7 @@ def get_running_ec2_instances() -> any:
 
 
 ## lets initiate another chat to get a ending review or summary of the accounts after the agents take action
+'''
 chat_result = engineer.initiate_chats(
     [
 
@@ -118,3 +106,8 @@ chat_result = engineer.initiate_chats(
     },
   ]
 )
+'''
+## Good to verify in a workflow of the types of permissions one has access to do
+print(assistant.llm_config['tools'])
+
+
