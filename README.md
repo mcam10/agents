@@ -15,3 +15,7 @@ Version checking.. testing..
 #Script info
 sudo ln -sf /usr/bin/python3.9 /usr/bin/python
 
+AWS Admin Agent.
+Being able to run tooling.. get docs.. 
+https://docs.aws.amazon.com/zh_cn/cli/latest/reference/trustedadvisor/index.html
+
