@@ -12,3 +12,6 @@ When instance is started.. use this for memory or RAG..
 Docs.. to parse..
 Version checking.. testing..
 
+#Script info
+sudo ln -sf /usr/bin/python3.9 /usr/bin/python
+
