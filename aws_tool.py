@@ -77,9 +77,15 @@ def versioning_enabled(
     return result.stdout
 
 @engineer.register_for_execution()
-@assistant.register_for_llm(description="List Cloudtrail events")
+@assistant.register_for_llm(description="Spin up a EC2 instance of type g6e.xlarge with a text file script")
+## Dont know if this works yet. havent tested the formatting
+## This should spin an instance and report some 200 if success, if not why not.. param failure or lack of perms
 def get_aws_cloudtrail_events(description="Get the last 10 cloudtrail events") -> any:
-    result = subprocess.run(["aws","cloudtrail", "lookup-events" "--max-items", "10"], capture_output=True, text=True)
+    result = subprocess.run(["aws ec2 run-instances --image-id ami-0cdc56cf41c025c96
+    --count 1 --instance-type g6e.xlarge \
+    --key-name malik --subnet-id subnet-068b74a790daabba1 --security-group-ids sg-06c6b3178aacfd4bd \
+    --user-data file://my_script.txt"
+    ], capture_output=True, text=True)
     return result.stdout
 
 @engineer.register_for_execution()
