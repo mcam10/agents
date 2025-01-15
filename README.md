@@ -19,3 +19,13 @@ AWS Admin Agent.
 Being able to run tooling.. get docs.. 
 https://docs.aws.amazon.com/zh_cn/cli/latest/reference/trustedadvisor/index.html
 
+
+## Spin up MongoDB Atlas local cluster
+install mongosh via brew 
+docker-compose up -d
+mongosh "mongodb://user:pass@localhost:27018/?directConnection=true"
+show dbs
+use <db name>
+show collections
+## Check embeddings
+db.collectionName.find()
